@@ -11,7 +11,7 @@ using vdb.msonline.helper;
 namespace vdbservices.Interfaces
 {
     using Microsoft.ServiceFabric.Services.Remoting;
-
+    
     public interface ICounter : IService
     {
         Task<long> GetCountAsync();        
