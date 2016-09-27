@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "exports": {
+    "vdbservices.Interfaces/1.0.0": {
+      "type": "project",
+      "framework": ".NETFramework,Version=v4.5.2",
+      "compile": {
+        "bin/Debug/vdbservices.Interfaces.dll": {}
+      },
+      "runtime": {
+        "../packages/Microsoft.Azure.KeyVault.Core.1.0.0/lib/net40/Microsoft.Azure.KeyVault.Core.dll": {},
+        "../packages/Microsoft.Data.Edm.5.6.4/lib/net40/Microsoft.Data.Edm.dll": {},
+        "../packages/Microsoft.Data.OData.5.6.4/lib/net40/Microsoft.Data.OData.dll": {},
+        "../packages/Microsoft.Data.Services.Client.5.6.4/lib/net40/Microsoft.Data.Services.Client.dll": {},
+        "../packages/Microsoft.ServiceFabric.5.1.163/lib/net45/Microsoft.ServiceFabric.Internal.Strings.dll": {},
+        "../packages/Microsoft.ServiceFabric.5.1.163/lib/net45/Microsoft.ServiceFabric.Internal.dll": {},
+        "../packages/Microsoft.ServiceFabric.5.1.163/lib/net45/System.Fabric.dll": {},
+        "../packages/Microsoft.ServiceFabric.Data.2.1.163/lib/net45/Microsoft.ServiceFabric.Data.Interfaces.dll": {},
+        "../packages/Microsoft.ServiceFabric.Data.2.1.163/lib/net45/Microsoft.ServiceFabric.Data.dll": {},
+        "../packages/Microsoft.ServiceFabric.Services.2.1.163/lib/net45/Microsoft.ServiceFabric.Services.dll": {},
+        "../packages/Microsoft.ServiceFabric.Services.2.1.163/lib/net45/ServiceFabricServiceModel.dll": {},
+        "../packages/Microsoft.WindowsAzure.SDK.2.9.0/lib/Microsoft.WindowsAzure.Diagnostics.dll": {},
+        "../packages/Microsoft.WindowsAzure.SDK.2.9.0/lib/Microsoft.WindowsAzure.ServiceRuntime.dll": {},
+        "../packages/Microsoft.WindowsAzure.SDK.2.9.0/lib/WindowsAzureEventSource.dll": {},
+        "../packages/Microsoft.WindowsAzure.SDK.2.9.0/lib/WindowsAzureTelemetryEvents.dll": {},
+        "../packages/Newtonsoft.Json.9.0.1/lib/net45/Newtonsoft.Json.dll": {},
+        "../packages/System.Spatial.5.6.4/lib/net40/System.Spatial.dll": {},
+        "../packages/WindowsAzure.Storage.7.2.0/lib/net40/Microsoft.WindowsAzure.Storage.dll": {},
+        "bin/Debug/vdbservices.Interfaces.dll": {}
+      },
+      "contentFiles": {
+        "bin/Debug/vdbservices.Interfaces.pdb": {
+          "buildAction": "None",
+          "codeLanguage": "any",
+          "copyToOutput": true
+        }
+      }
+    }
+  }
+}
