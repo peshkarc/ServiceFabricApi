@@ -4,7 +4,18 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace wbapi.Controllers.Electric
-{   
+{
+    //----------------------------------------------------------------------------------------------------------
+    // This Entity is used for holding the output for Electricity
+    //----------------------------------------------------------------------------------------------------------
+    public class Root
+    {
+        public  Root(Request _request)
+            {
+                Request = _request;
+            }
+       public Request Request { get; set; }
+    }
     public class Request
     {
         public string connectionId { get; set; }
@@ -21,6 +32,9 @@ namespace wbapi.Controllers.Electric
         public LDNHigh LDNHigh { get; set; }
         public LDNLow LDNLow { get; set; }
         public LDNSingle LDNSingle { get; set; }
+        public ODNHigh ODNHigh { get; set; }
+        public ODNLow ODNLow { get; set; }
+        public ODNSingle ODNSingle { get; set; }
     }
     public class LDNHigh
     {

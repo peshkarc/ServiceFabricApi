@@ -107,7 +107,29 @@ namespace sfs
             var result = list.OfType<AggregationEntities>().Where(lt => (lt.aggfromdate >= AggReq.Fromdate && lt.aggtodate <= AggReq.Todate) && lt.marketsegment == AggReq.marketsegment && lt.RowKey.StartsWith(AggReq.Aggregationtype));
             return result.ToList<AggregationEntities>();
         }
+        public async Task<string> GetLastElement(string connid, string dtFrom, string MktSeg)
+        {
+            StorageCredentials creds = new StorageCredentials(accountName, accountKey);
+            CloudStorageAccount account = new CloudStorageAccount(creds, useHttps: true);
 
+            CloudTableClient client = account.CreateCloudTableClient();
+            string tablename = (MktSeg.Trim() == "Electricity") ? "ElectricMeterReading" : (MktSeg.Trim() == "Gas") ? "GasMeterReading" : "";
+
+            CloudTable table = client.GetTableReference(tablename);
+
+            string pkFilter = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, connid.ToUpper());
+            //string rkLowerFilter = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.LessThanOrEqual, DateTime.Parse(dtFrom).Ticks.ToString() + EndRowKeyAdd);
+            string combinedFilter = string.Format("({0})", pkFilter);
+            TableQuery<DynEnt> query = new TableQuery<DynEnt>().Where(combinedFilter).Select(new List<string> { "ReadingDateTime", "MeterReadingStatusType" });
+            List<DynEnt> lstEle = table.ExecuteQuery(query)
+                                            .Where(x => x.MeterReadingStatusType != "Int")
+                                            .OrderByDescending(y => y.ReadingDateTime).
+                                            Take(1).ToList();
+            if (lstEle.Count > 0)
+                return lstEle[0].ReadingDateTime.ToString();
+            else
+                return "Invalid";
+        }
         public async Task<ElectricEntities> GetLDNDetails(string connectionId,string marketSegment,DateTime ReadingDate)
         {
             string tblname = "ElectricMeterReading";

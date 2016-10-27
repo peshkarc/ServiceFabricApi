@@ -133,6 +133,7 @@
   <ItemGroup>
     <Compile Include="AggregationRequest.cs" />
     <Compile Include="clsHelper.cs" />
+    <Compile Include="DynEnt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

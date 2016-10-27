@@ -5,6 +5,17 @@ using System.Threading.Tasks;
 
 namespace wbapi.Controllers.Gas
 {
+    //----------------------------------------------------------------------------------------------------------
+    // This Entity is used for holding the output for Gas
+    //----------------------------------------------------------------------------------------------------------
+    public class Root
+    {
+        public Root(Request _request)
+        {
+            Request = _request;
+        }
+        public Request Request { get; set; }
+    }
     public class Request
     {
         public string connectionId { get; set; }
@@ -18,6 +29,13 @@ namespace wbapi.Controllers.Gas
     public class Consumption
     {
         public string name { get; set; }              
-        public string GasUsage { get; set; }
+      //  public LDNSingle GasUsage { get; set; }        
+        public LDNSingle LDNSingle { get; set; }
+    }
+    public class LDNSingle
+    {
+        public string start { get; set; }
+        public string end { get; set; }
+        public string consumption { get; set; }
     }
 }

@@ -21,7 +21,7 @@ namespace vdbservices.Interfaces
         Task Save(AggregationRequest Aggreq,string sKey);
         Task Remove(string sKey);
 
-
+        Task<string> GetLastElement(string connid, string dtFrom, string MktSeg);
         Task<List<AggregationEntities>> GetDetails(AggregationRequest AggReq);
         Task<ElectricEntities> GetLDNDetails(string connectionId, string marketSegment, DateTime ReadingDate);
         Task<GasEntities> GetGasDetails(string connectionId, string marketSegment, DateTime ReadingDate);
@@ -40,19 +40,40 @@ namespace vdbservices.Interfaces
     }
     public class AggregationEntities : TableEntity
     {
+        /* public DateTime aggfromdate { get; set; }
+         public DateTime aggtodate { get; set; }
+         public string marketsegment { get; set; }
+         public double LDNUsage { get; set; }
+         public double LDNHighUsage { get; set; }
+         public double LDNLowUage { get; set; }
+         public double StartLDNLow { get; set; }
+         public double StartLDNHigh { get; set; }
+         public double EndLDNLow { get; set; }
+         public double EndLDNHigh { get; set; }
+         public double LDNGasPositionUsage { get; set; }*/
+
+        
         public DateTime aggfromdate { get; set; }
         public DateTime aggtodate { get; set; }
         public string marketsegment { get; set; }
         public double LDNUsage { get; set; }
-        public double LDNHighUsage { get; set; }
-        public double LDNLowUage { get; set; }
-        public double StartLDNLow { get; set; }
-        public double StartLDNHigh { get; set; }
-        public double EndLDNLow { get; set; }
-        public double EndLDNHigh { get; set; }
+        public Double LDNHighUsage { get; set; }
+        public Double LDNLowUsage { get; set; }
+        //public double DetlaLDN { get; set; }
         public double LDNGasPositionUsage { get; set; }
+        public double StartLDNHigh { get; set; }
+        public double StartLDNLow { get; set; }
+        public double EndLDNHigh { get; set; }
+        public double EndLDNLow { get; set; }
+        public double StartODNLow { get; set; }
+        public double StartODNHigh { get; set; }
+        public double EndODNHigh { get; set; }
+        public double ENDODNLow { get; set; }
+        public double StartLDNSingle { get; set; }
+        public double ENDLDNSingle { get; set; }
 
     }   
 }
 
 
+    

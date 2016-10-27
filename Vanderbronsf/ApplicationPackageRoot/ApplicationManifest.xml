@@ -39,9 +39,9 @@
     </Service>
   </DefaultServices>
   <Certificates>
-    <!--Azure Certificate-->
-    <!--<EndpointCertificate X509StoreName="MY" X509FindValue="ec88bff5911a9ac957f94c53dae7faca60d72b19" Name="Cert1" />-->
     <!--Test Certificate-->
-    <EndpointCertificate X509StoreName="MY" X509FindValue="28E7C31A69A8D3D3247AC86CBD6F5992788270DB" Name="Cert1" />
+    <EndpointCertificate X509StoreName="MY" X509FindValue="ec88bff5911a9ac957f94c53dae7faca60d72b19" Name="Cert1" />
+    <!--Azure Certificate-->
+    <!--<EndpointCertificate X509StoreName="MY" X509FindValue="28E7C31A69A8D3D3247AC86CBD6F5992788270DB" Name="Cert1" />-->
   </Certificates>
 </ApplicationManifest>

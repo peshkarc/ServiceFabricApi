@@ -27,7 +27,9 @@ namespace wbapi.Controllers
          string connstring = ConfigurationManager.AppSettings["SQLTableConnString"].ToString();               
          string sQueueName = ConfigurationManager.AppSettings["QueueName"].ToString();
 
-        // Constraints “Pay Load” Limits for Granularity Type
+        //----------------------------------------------------------------------------------------------------------
+        //  Global variables: To hold teh maximum limit for granularity types
+        //----------------------------------------------------------------------------------------------------------
         //private const int MaxYears  =   ;                     // No Limit
         private const int MaxMonths = 36;                       // 36 Months
         private const int MaxDays   = 365;                      // 365 Days
@@ -37,7 +39,12 @@ namespace wbapi.Controllers
 
         [System.Web.Http.HttpGet]
         [System.Web.Http.Route("api/V1/usage/{connectionId}/{marketSegment}/{granularity}/{start}/{end}")] 
-        [ValidateAntiForgeryToken]       
+        [ValidateAntiForgeryToken]
+        //----------------------------------------------------------------------------------------------------------
+        //  Get the request from API and see if it meets all the criterias defined (Date range, data avilability, etc)
+        //  then check if any data is avaiable for the given connection ID in Aggregation table
+        //  If no data is available then submit a request for aggregation
+        //----------------------------------------------------------------------------------------------------------
         public HttpResponseMessage Get(string connectionId,string marketSegment, string granularity,string start,string end)
         {
             string ClusterReference = "";
@@ -50,9 +57,13 @@ namespace wbapi.Controllers
             Electric.LDNLow ldnlow = null;
             Electric.LDNHigh ldnhigh = null;
             Electric.LDNSingle ldnsingle = null;
+            Electric.ODNLow odnlow = null;
+            Electric.ODNHigh odnhigh = null;
+            Electric.ODNSingle odnsingle = null;
 
             Electric.Consumption objConsumption = null;
             Gas.Consumption objGasConsumption = null;
+            Gas.LDNSingle gldnsingle = null;
             
             List<Electric.Consumption> lstconsumption = new List<Electric.Consumption>();
             List<Gas.Consumption> lstGasconsumption = new List<Gas.Consumption>();
@@ -70,7 +81,7 @@ namespace wbapi.Controllers
                 }
                 else
                 {
-                    if (!ValidateConnectionID(connectionId,ref ClusterReference))
+                    if (!ValidateConnectionID(connectionId, ref ClusterReference))
                     {
                         return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Invalid ConnectionID.");
                     }
@@ -89,94 +100,128 @@ namespace wbapi.Controllers
                     else
                     {
                         long lResultCnt = ValidateParamters(granularity, start, end, ref sdate, ref edate);
-
-                        AggregationRequest AggReq = new AggregationRequest();
-                        AggReq.ConnectionID = connectionId;
-                        AggReq.Aggregationtype = granularity;
-                        AggReq.marketsegment = sMarketSegment;
-                        AggReq.Fromdate = sdate;
-                        AggReq.Todate = (marketSegment == "Gas") ? edate.AddMinutes(15) : edate;
-                        AggReq.RequestSource = "API";
-
-                        if (counter.GetDetails(AggReq).Result.ToList<AggregationEntities>().Count() == lResultCnt)
-                        {                           
-                            counter.Remove(sKey);
-
-                            lstAgg = counter.GetDetails(AggReq).Result;
-                            if (marketSegment == "Gas")
-                            {
-                                Controllers.Gas.Request req = new Controllers.Gas.Request();
-                                req.connectionId = connectionId;
-                                req.ClusterReference = ClusterReference; 
-                                req.MarketSegment = marketSegment;
-                                req.granularity = granularity;
-                                req.start = start;
-                                req.end = end;
-
-                                foreach (AggregationEntities agg in lstAgg)
-                                {
-                                    sName = GetNameByGranularity(granularity, agg.aggfromdate);  // For Day
-                                    objGasConsumption = new Gas.Consumption();
-                                    objGasConsumption.name = sName;                                    
-                                    objGasConsumption.GasUsage = String.IsNullOrEmpty(Convert.ToString(agg.LDNGasPositionUsage)) ? "0" : Convert.ToString(agg.LDNGasPositionUsage);
-                                    lstGasconsumption.Add(objGasConsumption);
-                                }
-                                req.consumption = lstGasconsumption;
-                                return Request.CreateResponse<Controllers.Gas.Request>(HttpStatusCode.OK, req);
-                            }
-                            else
-                            {
-                                Controllers.Electric.Request req = new Controllers.Electric.Request();
-                                req.connectionId = connectionId;
-                                req.ClusterReference = ClusterReference;
-                                req.MarketSegment = marketSegment;
-                                req.granularity = granularity;
-                                req.start = start;
-                                req.end = end;
-
-                                foreach (AggregationEntities agg in lstAgg)
-                                {
-                                    sName = GetNameByGranularity(granularity, agg.aggfromdate);  // For Day
-
-                                    ldnlow = new Electric.LDNLow();
-                                    ldnlow.start = String.IsNullOrEmpty(Convert.ToString(agg.StartLDNLow)) ? "0" : Convert.ToString(agg.StartLDNLow);
-                                    ldnlow.end = String.IsNullOrEmpty(Convert.ToString(agg.EndLDNLow)) ? "0" : Convert.ToString(agg.EndLDNLow);
-                                    ldnlow.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNLowUage)) ? "0" : Convert.ToString(agg.LDNLowUage);
-
-                                    ldnhigh = new Electric.LDNHigh();
-                                    ldnhigh.start = String.IsNullOrEmpty(Convert.ToString(agg.EndLDNLow)) ? "0" : Convert.ToString(agg.EndLDNLow);
-                                    ldnhigh.end = String.IsNullOrEmpty(Convert.ToString(agg.EndLDNHigh)) ? "0" : Convert.ToString(agg.EndLDNHigh);
-                                    ldnhigh.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNHighUsage)) ? "0" : Convert.ToString(agg.LDNHighUsage);
-
-                                    ldnsingle = new Electric.LDNSingle();
-                                    ldnsingle.start = "0"; 
-                                    ldnsingle.end = "0"; 
-                                    ldnsingle.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNUsage)) ? "0" : Convert.ToString(agg.LDNUsage);
-
-                                    objConsumption = new Electric.Consumption();
-                                    objConsumption.name = sName;
-                                    objConsumption.LDNLow = ldnlow;
-                                    objConsumption.LDNHigh = ldnhigh;
-                                    objConsumption.LDNSingle = ldnsingle;
-
-                                    lstconsumption.Add(objConsumption);
-                                }
-                                req.consumption = lstconsumption;
-                                return Request.CreateResponse<Controllers.Electric.Request>(HttpStatusCode.OK, req);
-                            }
+                        string sRet = CheckDate(connectionId, sMarketSegment, sdate);
+                        if (sRet != "Valid")
+                        {
+                            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, sRet);
                         }
                         else
                         {
-                            AggregationRequest objReq = counter.Get(sKey).Result;
-                            if (objReq == null)
+                            AggregationRequest AggReq = new AggregationRequest();
+                            AggReq.ConnectionID = connectionId;
+                            AggReq.Aggregationtype = granularity;
+                            AggReq.marketsegment = sMarketSegment;
+                            AggReq.Fromdate = sdate;
+                            AggReq.Todate = edate;
+                            AggReq.RequestSource = "API";
+
+                            if (counter.GetDetails(AggReq).Result.ToList<AggregationEntities>().Count() == lResultCnt)
                             {
-                                InsertInQueue(AggReq);
-                                counter.Save(AggReq, sKey);
-                                return Request.CreateErrorResponse(HttpStatusCode.Accepted, "Request accepted, and queued for execution");
+                                counter.Remove(sKey);
+
+                                lstAgg = counter.GetDetails(AggReq).Result;
+                                if (marketSegment == "Gas")
+                                {
+                                    Controllers.Gas.Request req = new Controllers.Gas.Request();
+                                    req.connectionId = connectionId;
+                                    req.ClusterReference = ClusterReference;
+                                    req.MarketSegment = marketSegment;
+                                    req.granularity = granularity;
+                                    req.start = start;
+                                    req.end = end;
+
+                                    foreach (AggregationEntities agg in lstAgg)
+                                    {
+                                        sName = GetNameByGranularity(granularity, agg.aggfromdate);  // For Day
+                                        objGasConsumption = new Gas.Consumption();
+                                        objGasConsumption.name = sName;
+
+                                        gldnsingle = new Gas.LDNSingle();
+                                        gldnsingle.start = String.IsNullOrEmpty(Convert.ToString(agg.StartLDNSingle)) ? "0" : Convert.ToString(agg.StartLDNSingle);
+                                        gldnsingle.end = String.IsNullOrEmpty(Convert.ToString(agg.ENDLDNSingle)) ? "0" : Convert.ToString(agg.ENDLDNSingle);
+                                        gldnsingle.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNGasPositionUsage)) ? "0" : Convert.ToString(agg.LDNGasPositionUsage);
+
+                                        objGasConsumption.LDNSingle = gldnsingle;
+                                        // objGasConsumption.GasUsage = String.IsNullOrEmpty(Convert.ToString(agg.LDNGasPositionUsage)) ? "0" : Convert.ToString(agg.LDNGasPositionUsage);
+                                        lstGasconsumption.Add(objGasConsumption);
+                                    }
+                                    req.consumption = lstGasconsumption;
+                                    return Request.CreateResponse<Controllers.Gas.Root>(HttpStatusCode.OK, new Gas.Root(req));
+                                }
+                                else
+                                {
+                                    Controllers.Electric.Request req = new Controllers.Electric.Request();
+                                    req.connectionId = connectionId;
+                                    req.ClusterReference = ClusterReference;
+                                    req.MarketSegment = marketSegment;
+                                    req.granularity = granularity;
+                                    req.start = start;
+                                    req.end = end;
+
+                                    foreach (AggregationEntities agg in lstAgg)
+                                    {
+                                        sName = GetNameByGranularity(granularity, agg.aggfromdate);  // For Day
+
+                                        ldnlow = new Electric.LDNLow();
+                                        ldnlow.start = String.IsNullOrEmpty(Convert.ToString(agg.StartLDNLow)) ? "0" : Convert.ToString(agg.StartLDNLow);
+                                        ldnlow.end = String.IsNullOrEmpty(Convert.ToString(agg.EndLDNLow)) ? "0" : Convert.ToString(agg.EndLDNLow);
+                                        ldnlow.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNLowUsage)) ? "0" : Convert.ToString(agg.LDNLowUsage);
+
+                                        ldnhigh = new Electric.LDNHigh();
+                                        ldnhigh.start = String.IsNullOrEmpty(Convert.ToString(agg.StartLDNHigh)) ? "0" : Convert.ToString(agg.StartLDNHigh);
+                                        ldnhigh.end = String.IsNullOrEmpty(Convert.ToString(agg.EndLDNHigh)) ? "0" : Convert.ToString(agg.EndLDNHigh);
+                                        ldnhigh.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNHighUsage)) ? "0" : Convert.ToString(agg.LDNHighUsage);
+
+                                        ldnsingle = new Electric.LDNSingle();
+                                        ldnsingle.start = String.IsNullOrEmpty(Convert.ToString(agg.StartLDNSingle)) ? "0" : Convert.ToString(agg.StartLDNSingle);
+                                        ldnsingle.end = String.IsNullOrEmpty(Convert.ToString(agg.ENDLDNSingle)) ? "0" : Convert.ToString(agg.ENDLDNSingle);
+                                        ldnsingle.consumption = String.IsNullOrEmpty(Convert.ToString(agg.LDNUsage)) ? "0" : Convert.ToString(agg.LDNUsage);
+
+
+                                        odnlow = new Electric.ODNLow();
+                                        odnlow.start = String.IsNullOrEmpty(Convert.ToString(agg.StartODNLow)) ? "0" : Convert.ToString(agg.StartODNLow);
+                                        odnlow.end = String.IsNullOrEmpty(Convert.ToString(agg.ENDODNLow)) ? "0" : Convert.ToString(agg.ENDODNLow);
+                                        odnlow.consumption = "";
+
+                                        odnhigh = new Electric.ODNHigh();
+                                        odnhigh.start = String.IsNullOrEmpty(Convert.ToString(agg.StartODNHigh)) ? "0" : Convert.ToString(agg.StartODNHigh);
+                                        odnhigh.end = String.IsNullOrEmpty(Convert.ToString(agg.EndODNHigh)) ? "0" : Convert.ToString(agg.EndODNHigh);
+                                        odnhigh.consumption = "";
+
+                                        odnsingle = new Electric.ODNSingle();
+                                        odnsingle.start = "";
+                                        odnsingle.end = "";
+                                        odnsingle.consumption = "";
+
+                                        objConsumption = new Electric.Consumption();
+                                        objConsumption.name = sName;
+                                        objConsumption.LDNLow = ldnlow;
+                                        objConsumption.LDNHigh = ldnhigh;
+                                        objConsumption.LDNSingle = ldnsingle;
+                                        objConsumption.ODNLow = odnlow;
+                                        objConsumption.ODNHigh = odnhigh;
+                                        objConsumption.ODNSingle = odnsingle;
+
+                                        lstconsumption.Add(objConsumption);
+                                    }
+                                    req.consumption = lstconsumption;
+
+                                    return Request.CreateResponse<Controllers.Electric.Root>(HttpStatusCode.OK, new Electric.Root(req));
+                                }
                             }
                             else
                             {
-                                return Request.CreateErrorResponse(HttpStatusCode.Accepted, "Request is in Progress, Please try after some time.");
+                                AggregationRequest objReq = counter.Get(sKey).Result;
+                                if (objReq == null)
+                                {
+                                    InsertInQueue(AggReq);
+                                    counter.Save(AggReq, sKey);
+                                    return Request.CreateErrorResponse(HttpStatusCode.Accepted, "Request accepted, and queued for execution");
+                                }
+                                else
+                                {
+                                    return Request.CreateErrorResponse(HttpStatusCode.Accepted, "Request is in Progress, Please try after some time.");
+                                }
                             }
                         }
                     }
@@ -188,8 +233,33 @@ namespace wbapi.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest,ex.Message);
             }
         }
-
+        //----------------------------------------------------------------------------------------------------------
+        //  Check if the user has any data available in azure storange table in the given date range
+        //----------------------------------------------------------------------------------------------------------
+        public string CheckDate(string sConn, string sMkt, DateTime sStart)
+        {
+            var counter = ServiceProxy.Create<ICounter>(new Uri("fabric:/Vanderbronsf/sfs"), new ServicePartitionKey(1));
+            string sDate = counter.GetLastElement(sConn, sStart.ToString(), sMkt).Result;
+            if (sDate != "Invalid")
+            {
+                if (Convert.ToDateTime(sDate) > sStart)
+                {
+                    return "Please select a date range beyond: " + sDate;
+                }
+                else
+                {
+                    return "Valid";
+                }
+            }
+            else
+            {
+                return "Customer Does not Exist.";
+            }
+        }
         //For Submitting Request in Aggregation Queue if Aggregation data not exists
+        //----------------------------------------------------------------------------------------------------------
+        //  Submit the request for Aggregation
+        //----------------------------------------------------------------------------------------------------------
         protected void SubmitRequestInQuque(AggregationRequest Aggreq, long lResultCnt)
         {
             AggregationRequest objAggReq = null;
@@ -234,7 +304,9 @@ namespace wbapi.Controllers
 
             }
         }
-
+        //----------------------------------------------------------------------------------------------------------
+        //  Get the end date for the request based on the date range criteria
+        //----------------------------------------------------------------------------------------------------------
         protected DateTime GetEndDate(string marketsegment,string granularity,DateTime EndDate)
         {
             DateTime result = EndDate;
@@ -261,6 +333,9 @@ namespace wbapi.Controllers
             }
             return (marketsegment == "Gas") ? result : result.AddMinutes(-15);
         }
+        //----------------------------------------------------------------------------------------------------------
+        //  Insert the requet in Aggregation queue
+        //----------------------------------------------------------------------------------------------------------
         protected void InsertInQueue(AggregationRequest Req)
         {
             string sConnectionString = "Endpoint=sb://namevdbanalyticssb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=iPG1toRxfEuo8JD2Hye7DzX/nnfJUtwvBn8Q5znceKY=";
@@ -278,7 +353,9 @@ namespace wbapi.Controllers
             // Send Request
             client.Send(brokeredMessage);
         }
-        
+        //----------------------------------------------------------------------------------------------------------
+        //  This function is used for validating the granularity based on user inputs
+        //----------------------------------------------------------------------------------------------------------
         protected bool Validate(string Type,string value)
         {
             bool result = false;
@@ -305,7 +382,9 @@ namespace wbapi.Controllers
             return result;
         }
 
+        //----------------------------------------------------------------------------------------------------------
         // For Validating ConnectionID & Getting ClusterReference
+        //----------------------------------------------------------------------------------------------------------
         public bool ValidateConnectionID(string connectionID, ref string ClusterReference)
         {
             bool result = false;
@@ -334,8 +413,9 @@ namespace wbapi.Controllers
             }
             return result;
         }
-        
+        //----------------------------------------------------------------------------------------------------------
         // For Validating Start & End Parameter and return Start Date & End Date as Per sGranularity
+        //----------------------------------------------------------------------------------------------------------
         protected long ValidateParamters(string sGranularity, string start, string end, ref DateTime oStartDate, ref DateTime oEndDate)
         {
             long lResult = 0;
@@ -489,8 +569,9 @@ namespace wbapi.Controllers
            // lResult = (lResult == 0) ? 1 : lResult;
             return lResult;
         }
-
+        //----------------------------------------------------------------------------------------------------------
         //Get First Day by Week No.
+        //----------------------------------------------------------------------------------------------------------
         protected DateTime FirstDateOfWeek(int year, int weekOfYear)
         {
             var firstDate = new DateTime(year, 1, 4);
@@ -501,8 +582,9 @@ namespace wbapi.Controllers
 
             return firstDate.AddDays((weekOfYear - 1) * 7);
         }
-        
+        //----------------------------------------------------------------------------------------------------------
         // Get Last Day by Week No.
+        //----------------------------------------------------------------------------------------------------------
         protected DateTime LastDateOfWeek(int year, int weekOfYear)
         {
             var firstDate = new DateTime(year, 1, 4);
@@ -513,8 +595,9 @@ namespace wbapi.Controllers
 
             return firstDate.AddDays((weekOfYear - 1) * 7);
         }
-
+        //----------------------------------------------------------------------------------------------------------
         // For Getting Date Difference
+        //----------------------------------------------------------------------------------------------------------
         protected long DateDiff(DateInterval intervalType, DateTime fromDate, DateTime toDate)
         {
             switch (intervalType)
@@ -560,6 +643,9 @@ namespace wbapi.Controllers
                     return 0;
             }
         }
+        //----------------------------------------------------------------------------------------------------------
+        // Structire to hold the date details
+        //----------------------------------------------------------------------------------------------------------
         public enum DateInterval
         {
             Day,
@@ -573,8 +659,9 @@ namespace wbapi.Controllers
             WeekOfYear,
             Year
         }
-
+        //----------------------------------------------------------------------------------------------------------
         // For Getting Name property of Response message by Date & Granularity
+        //----------------------------------------------------------------------------------------------------------
         protected string GetNameByGranularity(string Granularity,DateTime sdate)
         {
             string result = "";
@@ -589,8 +676,9 @@ namespace wbapi.Controllers
             }
             return result;
         }
-
+        //----------------------------------------------------------------------------------------------------------
         // Exception Logging Method
+        //----------------------------------------------------------------------------------------------------------
         public void AddLog(string CallingProcess, string ConnId, string From, string To, string CallingFunction, string ExceptionMessage, string Comments)
         {                       
             using (var connection = new C.SqlConnection(connstring))
@@ -608,8 +696,5 @@ namespace wbapi.Controllers
                 connection.Close();
             }
         }
-        
-
-        
     }
 }

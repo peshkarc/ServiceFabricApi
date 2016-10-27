@@ -14,28 +14,7 @@ namespace wbapi.Controllers
     //[System.Web.Http.RoutePrefix("api/[controller]")]
     public class ValuesController : System.Web.Http.ApiController
     {
-        // GET api/values
-        //[HttpGet]
-        //public async Task<List<ElectricEntities>> Get()
-        //{
-        //    // ICounter counter =
-        //    var counter = ServiceProxy.Create<ICounter>(new Uri("fabric:/Vanderbronsf/sfs"), new ServicePartitionKey(1));
-        //    ReportParameter rptp = new ReportParameter();
-        //    rptp.ConnectionID = "C59CC3B8-FCCE-4F59-BCBA-A30E0160886E";
-        //    rptp.FromDate = new DateTime(2016, 06, 01);
-        //    rptp.ToDate = new DateTime(2016, 08, 31);
-        //    return await counter.GetDetails(rptp);
-            
-        //}
-
-        //[HttpGet]
-        //[Route("{connectionId}/{type}/{start}/{end}")]
-        //public string usage(string connectionId, string type, string start, string end)
-        //{
-        //    return connectionId + "-" + type + "-" + start + "-" + end;
-        //}
-
-
+ 
         // GET api/values/5
         [HttpGet]
         [Route("api/values/{id}")]

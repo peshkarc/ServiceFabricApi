@@ -9,6 +9,9 @@ using vdb.msonline.helper;
 
 namespace wbapi.Controllers
 {
+    //----------------------------------------------------------------------------------------------------------
+    // This Function submits the request to Aggregation queue
+    //----------------------------------------------------------------------------------------------------------
     public static class QueueConnector
     {
         // Thread-safe. Recommended that you cache rather than recreating it
